@@ -58,7 +58,7 @@ void drawWrappedText(U8G2 &u8g2, int x, int y, int maxWidth, const char *text)
     free(str); // Libera a memória alocada pela cópia
 }
 
-void setup_screen()
+void setupScreen()
 {
     u8g2.begin();
     u8g2.setFont(u8g2_font_ncenB08_tr);
@@ -74,7 +74,7 @@ void printText(const char *text)
 }
 
 
-void print_line(const char *text)
+void printLine(const char *text)
 {
     u8g2.clearBuffer();
     u8g2.drawStr(0, 32, text);

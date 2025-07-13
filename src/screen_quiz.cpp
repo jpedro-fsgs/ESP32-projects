@@ -3,13 +3,13 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include "config.h"
-#include "screen_quiz.h"
+#include "_screen_quiz.h"
 
 int status = WL_IDLE_STATUS;
 const char *api = "https://opentdb.com/api.php?amount=1&difficulty=easy&type=boolean";
 #define REDLIGHT 2
-#define WHITEBUTTON 19
-#define REDBUTTON 18
+#define WHITEBUTTON 18
+#define REDBUTTON 19
 
 void blink(int duration, int led, int times)
 {
@@ -30,7 +30,7 @@ void startup_blink(int led)
 void setup()
 {
 
-    Serial.begin(9600);
+    Serial.begin(115200);
     setup_screen();
     pinMode(REDLIGHT, OUTPUT);
     pinMode(WHITEBUTTON, INPUT_PULLUP);

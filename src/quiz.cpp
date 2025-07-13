@@ -7,8 +7,8 @@
 int status = WL_IDLE_STATUS;
 const char *api = "https://opentdb.com/api.php?amount=1&difficulty=easy&type=boolean";
 #define REDLIGHT 5
-#define WHITEBUTTON 19
-#define REDBUTTON 21
+#define WHITEBUTTON 18
+#define REDBUTTON 19
 
 void blink(int duration, int led, int times)
 {
