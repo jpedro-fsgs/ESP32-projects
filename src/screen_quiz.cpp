@@ -3,12 +3,13 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include "config.h"
+#include "screen_quiz.h"
 
 int status = WL_IDLE_STATUS;
 const char *api = "https://opentdb.com/api.php?amount=1&difficulty=easy&type=boolean";
-#define REDLIGHT 5
+#define REDLIGHT 2
 #define WHITEBUTTON 19
-#define REDBUTTON 21
+#define REDBUTTON 18
 
 void blink(int duration, int led, int times)
 {
@@ -30,6 +31,7 @@ void setup()
 {
 
     Serial.begin(9600);
+    setup_screen();
     pinMode(REDLIGHT, OUTPUT);
     pinMode(WHITEBUTTON, INPUT_PULLUP);
     pinMode(REDBUTTON, INPUT_PULLUP);
@@ -40,6 +42,7 @@ void setup()
     while (WiFi.status() != WL_CONNECTED && tentativas < 20)
     {
         Serial.print("Tentando conectar... Status: ");
+        print_screen("TRYING TO CONNECT...");
         Serial.println(WiFi.status());
         delay(1000);
         tentativas++;
@@ -57,6 +60,7 @@ void setup()
         Serial.println("Falha ao conectar ao WiFi.");
     }
 
+    print_screen("QUIZ");
     startup_blink(REDLIGHT);
 }
 
@@ -77,15 +81,18 @@ void checarResposta()
     if (digitalRead(REDBUTTON) == LOW)
     {
         Serial.println("Pressionado: Falso");
+        print_screen("PRESSED: FALSE");
         blink(100, REDLIGHT, 5);
         if (!respostaAtual)
         {
             Serial.println("Certa Resposta!");
+            correto();
             blink(500, REDLIGHT, 1);
         }
         else
         {
             Serial.println("Resposta Incorreta!");
+            errado();
             blink(500, REDLIGHT, 1);
         }
         perguntaAtiva = 0;
@@ -93,15 +100,18 @@ void checarResposta()
     else if (digitalRead(WHITEBUTTON) == LOW)
     {
         Serial.println("Pressionado: Verdadeiro");
+        print_screen("PRESSED: TRUE");
         blink(100, REDLIGHT, 5);
         if (respostaAtual)
         {
             Serial.println("Certa Resposta!");
+            correto();
             blink(500, REDLIGHT, 1);
         }
         else
         {
             Serial.println("Resposta Incorreta!");
+            errado();
             blink(500, REDLIGHT, 1);
         }
         perguntaAtiva = 0;
@@ -115,6 +125,7 @@ void loop()
         if (digitalRead(WHITEBUTTON) == LOW || digitalRead(REDBUTTON) == LOW)
         {
             Serial.println("Carregando Pergunta...");
+            print_screen("LOADING...");
             blink(5, REDLIGHT, 5);
 
             if (WiFi.status() == WL_CONNECTED)
@@ -134,6 +145,7 @@ void loop()
                     perguntaAtual = question;
                     respostaAtual = answer == "True";
                     Serial.println(perguntaAtual);
+                    mostrarPergunta(perguntaAtual.c_str());
                 }
                 else
                 {
