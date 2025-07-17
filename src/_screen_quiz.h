@@ -97,10 +97,31 @@ void errado()
     u8g2.sendBuffer();
 }
 
-
 void print_screen(const char *pergunta)
 {
     u8g2.clearBuffer();
     u8g2.drawStr(0, 32, pergunta);
+    u8g2.sendBuffer();
+}
+
+void setupScreen()
+{
+    u8g2.begin();
+    u8g2.setFont(u8g2_font_ncenB08_tr);
+    u8g2.clearBuffer();
+}
+
+void printText(const char *text)
+{
+
+    u8g2.clearBuffer();
+    drawWrappedText(u8g2, 0, 12, 128, text);
+    u8g2.sendBuffer();
+}
+
+void printLine(const char *text)
+{
+    u8g2.clearBuffer();
+    u8g2.drawStr(0, 32, text);
     u8g2.sendBuffer();
 }

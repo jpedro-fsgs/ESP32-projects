@@ -3,6 +3,10 @@
 // Initialize the display (check I2C address)
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
 
+const char *ntpServer = "pool.ntp.org";
+const long gmtOffset_sec = -3 * 3600;
+const int daylightOffset_sec = 0;
+
 // =======================================================================
 // FUNÇÃO PARA DESENHAR TEXTO COM QUEBRA DE LINHA AUTOMÁTICA
 // Parâmetros:
@@ -63,6 +67,14 @@ void setupScreen()
     u8g2.begin();
     u8g2.setFont(u8g2_font_ncenB08_tr);
     u8g2.clearBuffer();
+    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+}
+
+void clearTextLine(int y, int altura = 12)
+{
+    u8g2.setDrawColor(0); // apagar
+    u8g2.drawBox(0, y - altura + 1, u8g2.getDisplayWidth(), altura);
+    u8g2.setDrawColor(1); // volta ao normal
 }
 
 void printText(const char *text)
@@ -73,10 +85,78 @@ void printText(const char *text)
     u8g2.sendBuffer();
 }
 
-
-void printLine(const char *text)
+void printLine(const char *text, int y = 32)
 {
     u8g2.clearBuffer();
-    u8g2.drawStr(0, 32, text);
+    u8g2.drawStr(0, y, text);
     u8g2.sendBuffer();
+}
+
+// Suponha que a largura do display seja 128 pixels
+#define SCREEN_WIDTH 128
+
+void printLineRoll(const char *text, int y = 32)
+{
+    static int x = SCREEN_WIDTH; // posição horizontal inicial
+    static unsigned long lastUpdate = 0;
+    const int scrollSpeed = 10; // em milissegundos
+
+    int textWidth = u8g2.getStrWidth(text);
+
+    if (millis() - lastUpdate > scrollSpeed)
+    {
+        lastUpdate = millis();
+
+        clearTextLine(y);
+
+        if (textWidth > SCREEN_WIDTH)
+        {
+            u8g2.setCursor(x, y);
+            u8g2.print(text);
+
+            x--;
+
+            if (x < -textWidth)
+            {
+                x = SCREEN_WIDTH;
+            }
+        }
+        else
+        {
+            // Texto cabe na tela, centraliza ou alinha à esquerda
+            u8g2.setCursor(0, y);
+            u8g2.print(text);
+        }
+
+        u8g2.sendBuffer();
+    }
+}
+
+
+
+void showTime()
+{
+
+    static unsigned long ultimaAtualizacao = 0;
+    unsigned long agora = millis();
+
+    if (agora - ultimaAtualizacao >= 1000)
+    { // 1 segundo passou
+        ultimaAtualizacao = agora;
+
+        struct tm timeinfo;
+        if (!getLocalTime(&timeinfo))
+        {
+            Serial.println("Erro ao obter hora");
+            return; // sem delay!
+        }
+
+        // Formata o horário para HH:MM:SS
+        char buffer[9];
+        strftime(buffer, sizeof(buffer), "%H:%M:%S", &timeinfo);
+
+        clearTextLine(60);
+        u8g2.drawStr(0, 60, buffer); // Escreve o texto
+        u8g2.sendBuffer();           // Atualiza o display
+    }
 }

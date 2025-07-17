@@ -2,17 +2,19 @@
 #include "_wifi.h"
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include "_time.h"
+#include "_screen.h"
 
-#define REDLIGHT 33
+#define REDLIGHT 25
 #define WHITEBUTTON 18
 #define REDBUTTON 19
+#define BUZZER 33
 
-bool redLightState = false;
-unsigned long lastBlinkTime = 0;
+
 
 void blinkNonBlocking(int interval)
 {
+    static bool redLightState = false;
+    static unsigned long lastBlinkTime = 0;
     unsigned long currentTime = millis();
 
     // Verifica se passou tempo suficiente
@@ -21,6 +23,21 @@ void blinkNonBlocking(int interval)
         redLightState = !redLightState; // Inverte o estado
         digitalWrite(REDLIGHT, redLightState ? HIGH : LOW);
         lastBlinkTime = currentTime; // Atualiza o tempo da última mudança
+    }
+}
+
+void buzzNonBlocking(int interval)
+{
+    static bool buzzerState = false;
+    static unsigned long lastBlockTime = 0;
+    unsigned long currentTime = millis();
+
+    // Verifica se passou tempo suficiente
+    if (currentTime - lastBlockTime >= interval)
+    {
+        buzzerState = !buzzerState; // Inverte o estado
+        digitalWrite(BUZZER, buzzerState ? HIGH : LOW);
+        lastBlockTime = currentTime; // Atualiza o tempo da última mudança
     }
 }
 struct team
@@ -39,29 +56,28 @@ struct team teams[] = {
 
 int currentTeam = 0;
 
-int status = WL_IDLE_STATUS;
-const char *ntpServer = "pool.ntp.org";
-const long gmtOffset_sec = -3 * 3600;
-const int daylightOffset_sec = 0;
-
-int whiteButtonPressed()
+bool whiteButtonPressed()
 {
     if (digitalRead(WHITEBUTTON) == LOW)
     {
+        digitalWrite(BUZZER, HIGH);
         delay(200);
-        return 1;
+        return true;
     }
-    return 0;
+    digitalWrite(BUZZER, LOW);
+    return false;
 }
 
-int redButtonPressed()
+bool redButtonPressed()
 {
     if (digitalRead(REDBUTTON) == LOW)
     {
+        digitalWrite(BUZZER, HIGH);
         delay(200);
-        return 1;
+        return true;
     }
-    return 0;
+    digitalWrite(BUZZER, LOW);
+    return false;
 }
 
 void setup()
@@ -72,23 +88,28 @@ void setup()
     Serial.println("Vai Corinthians!");
     setupScreen();
     pinMode(REDLIGHT, OUTPUT);
+    pinMode(BUZZER, OUTPUT);
     pinMode(WHITEBUTTON, INPUT_PULLUP);
     pinMode(REDBUTTON, INPUT_PULLUP);
 
     setupWifi();
-
-    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
     printLine("Vai Corinthians!");
 }
 
 void printSchedule()
 {
-    u8g2.clearBuffer();
-    u8g2.drawStr(0, 12, (teams[currentTeam].strEvent).c_str());
-    u8g2.drawStr(0, 24, (teams[currentTeam].strLeague).c_str());
-    u8g2.drawStr(0, 36, ("Time: " + teams[currentTeam].strTime).c_str());
-    u8g2.drawStr(0, 48, ("Date: " + teams[currentTeam].dateEvent).c_str());
-    u8g2.sendBuffer();
+    // u8g2.clearBuffer();
+    // u8g2.drawStr(0, 12, (teams[currentTeam].strEvent).c_str());
+    // u8g2.drawStr(0, 24, (teams[currentTeam].strLeague).c_str());
+    // u8g2.drawStr(0, 36, ("Time: " + teams[currentTeam].strTime).c_str());
+    // u8g2.drawStr(0, 48, ("Date: " + teams[currentTeam].dateEvent).c_str());
+
+    printLineRoll((teams[currentTeam].strEvent).c_str(), 12);
+    printLineRoll((teams[currentTeam].strLeague).c_str(), 24);
+    printLineRoll(("Time: " + teams[currentTeam].strTime).c_str(), 36);
+    printLineRoll(("Date: " + teams[currentTeam].dateEvent).c_str(), 48);
+    // u8g2.sendBuffer();
+
 }
 
 JsonDocument doc;
@@ -135,7 +156,6 @@ void loop()
     if (whiteButtonPressed())
     {
         currentTeam = !currentTeam;
-        printSchedule();
     }
     if (redButtonPressed())
     {
@@ -143,11 +163,14 @@ void loop()
     }
     if (!currentTeam)
     {
-        blinkNonBlocking(1000);
+        blinkNonBlocking(500);
+        // buzzNonBlocking(250);
     }
     else
     {
-        blinkNonBlocking(2000);
+        blinkNonBlocking(250);
+        // buzzNonBlocking(100);
     }
+    printSchedule();
     showTime();
 }
